@@ -1,7 +1,7 @@
 import { createSlice } from '@reduxjs/toolkit'
 
 export const step: number = 10
-export const oneSecond: number = 1000
+const oneSecond: number = 1000
 
 export enum timerStates {
     FINISHED = 0,
@@ -12,6 +12,7 @@ export enum timerStates {
 
 let initialState = {
     timerLength: 10,
+    timerLengthMs: 10*oneSecond,
     timerState: timerStates.STOPPED,
     elapsedTime: 0
 }
@@ -37,6 +38,7 @@ const timerSlice = createSlice({
             const { timerLength } = action.payload
             state.timerState = timerStates.STOPPED
             state.timerLength = timerLength
+            state.timerLengthMs = timerLength*oneSecond
             state.elapsedTime = 0
         },
         interval(state) {

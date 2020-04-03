@@ -9,7 +9,6 @@ import {
     interval,
     timerStates,
     step,
-    oneSecond,
 } from 'slices/timer'
 import { useDispatch, useSelector } from 'react-redux'
 import { RootState } from 'slices'
@@ -19,30 +18,29 @@ export default function Timer() {
     const dispatch = useDispatch()
     const {
         timerLength,
+        timerLengthMs,
         timerState,
-        elapsedTime } = useSelector(
-            (state: RootState) => state.timer
-        )
-    /*     const [timerLength, setTimerLength] = useState(10)
-        const [timerState, setTimerState] = useState(timerStates.STOPPED)
-        const [currentTime, setCurrentTime] = useState(timerLength*oneSecond)
-     */
+        elapsedTime,
+    } = useSelector(
+        (state: RootState) => state.timer
+    )
+
     useEffect(() => {
         const tick = setInterval(() => {
-            if (timerState === timerStates.PLAYING && elapsedTime < timerLength*oneSecond) {
+            if (timerState === timerStates.PLAYING && elapsedTime < timerLengthMs) {
                 dispatch(interval())
-            } else if (elapsedTime >= timerLength*oneSecond) {
+            } else if (elapsedTime >= timerLengthMs) {
                 dispatch(finishTimer())
             }
         }, step)
         return () => {
             clearInterval(tick)
         }
-    }, [timerState, elapsedTime, dispatch, timerLength])
+    }, [timerState, elapsedTime, dispatch, timerLengthMs])
 
     const onChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const newTimerLength: number = parseInt(e.target.value)
-        dispatch(changeTimer({timerLength: newTimerLength}))
+        dispatch(changeTimer({ timerLength: newTimerLength }))
     }
 
     const handleStart = () => {
@@ -67,7 +65,7 @@ export default function Timer() {
                 onChange={onChange}
             />
             <div style={{ margin: "50px", fontSize: "50px" }}>
-                {timerLength ? timerLength*oneSecond - elapsedTime : '--'}
+                {timerLength ? `${((timerLengthMs - elapsedTime) / 1000).toFixed(3)}s` : '--'}
             </div>
             {(timerState === timerStates.PAUSED || timerState === timerStates.STOPPED) && (
                 <button
