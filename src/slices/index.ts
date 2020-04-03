@@ -1,6 +1,10 @@
 import { combineReducers } from '@reduxjs/toolkit'
 
-const rootReducer = combineReducers({})
+import timerReducer from 'slices/timer'
+
+const rootReducer = combineReducers({
+    timer: timerReducer,
+})
 
 export type RootState = ReturnType<typeof rootReducer>
 

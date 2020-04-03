@@ -1,51 +1,60 @@
-import React, { useState, useEffect } from 'react'
+import React, { useEffect } from 'react'
 
-enum timerStates {
-    FINISHED = 0,
-    STOPPED = 1,
-    PLAYING = 2,
-    PAUSED = 3,
-}
-
-const step: number = 100
-const oneSecond: number = 1000
+import {
+    startTimer,
+    pauseTimer,
+    stopTimer,
+    finishTimer,
+    changeTimer,
+    interval,
+    timerStates,
+    step,
+    oneSecond,
+} from 'slices/timer'
+import { useDispatch, useSelector } from 'react-redux'
+import { RootState } from 'slices'
 
 export default function Timer() {
 
-    const [timerLength, setTimerLength] = useState(10)
-    const [timerState, setTimerState] = useState(timerStates.STOPPED)
-    const [currentTime, setCurrentTime] = useState(timerLength*oneSecond)
-
+    const dispatch = useDispatch()
+    const {
+        timerLength,
+        timerState,
+        elapsedTime } = useSelector(
+            (state: RootState) => state.timer
+        )
+    /*     const [timerLength, setTimerLength] = useState(10)
+        const [timerState, setTimerState] = useState(timerStates.STOPPED)
+        const [currentTime, setCurrentTime] = useState(timerLength*oneSecond)
+     */
     useEffect(() => {
         const tick = setInterval(() => {
-            if (timerState === timerStates.PLAYING && currentTime > 0) {
-                setCurrentTime(t => t - step)
-            } else if ( currentTime === 0 ) {
-                setTimerState(timerStates.FINISHED)
+            if (timerState === timerStates.PLAYING && elapsedTime < timerLength*oneSecond) {
+                dispatch(interval())
+            } else if (elapsedTime >= timerLength*oneSecond) {
+                dispatch(finishTimer())
             }
         }, step)
         return () => {
             clearInterval(tick)
         }
-    }, [timerState, currentTime])
+    }, [timerState, elapsedTime, dispatch, timerLength])
 
     const onChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const newTimerLength: number = parseInt(e.target.value)
-        setTimerLength(newTimerLength)
-        setCurrentTime(newTimerLength*oneSecond)
+        dispatch(changeTimer({timerLength: newTimerLength}))
     }
 
     const handleStart = () => {
-        setTimerState(timerStates.PLAYING)
+        dispatch(startTimer())
     }
 
     const handlePause = () => {
-        setTimerState(timerStates.PAUSED)
+        dispatch(pauseTimer())
     }
 
     const handleStop = () => {
-        setTimerState(timerStates.STOPPED)
-        setCurrentTime(timerLength*oneSecond)
+        dispatch(stopTimer())
     }
 
     return (
@@ -58,7 +67,7 @@ export default function Timer() {
                 onChange={onChange}
             />
             <div style={{ margin: "50px", fontSize: "50px" }}>
-                {currentTime}
+                {timerLength ? timerLength*oneSecond - elapsedTime : '--'}
             </div>
             {(timerState === timerStates.PAUSED || timerState === timerStates.STOPPED) && (
                 <button
@@ -68,13 +77,13 @@ export default function Timer() {
                 </button>
             )}
             {(timerState === timerStates.PLAYING) && (
-                    <button
-                        onClick={handlePause}
-                    >
-                        Pause
-                    </button>
+                <button
+                    onClick={handlePause}
+                >
+                    Pause
+                </button>
 
-                )
+            )
             }
             {(timerState !== timerStates.STOPPED) && <button
                 onClick={handleStop}
