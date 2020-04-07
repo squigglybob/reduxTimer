@@ -5,39 +5,47 @@ import {
     pauseTimer,
     stopTimer,
     finishTimer,
-    changeTimer,
+    transitionTimer,
+    /*     changeTimer, */
     interval,
     step,
     isFinished,
     isPaused,
     isPlaying,
     isStopped,
-} from 'slices/timer'
+    Segment as SegmentType,
+} from 'slices/activeTimer'
 import { useDispatch, useSelector } from 'react-redux'
 import { RootState } from 'slices'
+import Segment from './Segment'
 
 export default function Timer() {
 
     const dispatch = useDispatch()
     const {
-        timerLength,
-        timerLengthMs,
         timerState,
-        elapsedTime,
-    } = useSelector((state: RootState) => state.timer)
-
+        segments,
+        activeSegmentIndex,
+    } = useSelector((state: RootState) => state.activeTimer)
 
     useEffect(() => {
         let tick: number | undefined = undefined
         if (isPlaying(timerState)) {
-            tick = window.setInterval(() => {
-                if (isPlaying(timerState) && elapsedTime < timerLengthMs) {
-                    dispatch(interval())
-                } else if (elapsedTime >= timerLengthMs) {
-                    dispatch(finishTimer())
-                }
+            console.log(segments, activeSegmentIndex);
 
-                console.log(timerLengthMs, elapsedTime);
+            const activeSegment: SegmentType = segments[activeSegmentIndex]
+            tick = window.setInterval(() => {
+                if (isPlaying(timerState) && activeSegment.elapsedTime < activeSegment.timer.timerLengthMs) {
+                    dispatch(interval())
+                } else if (activeSegment.elapsedTime >= activeSegment.timer.timerLengthMs) {
+                    if (activeSegmentIndex === segments.length - 1) {
+                        dispatch(finishTimer())
+                    } else {
+                        const nextSegmentIndex: number = activeSegmentIndex + 1
+                        dispatch(transitionTimer(nextSegmentIndex))
+                        dispatch(startTimer())
+                    }
+                }
             }, step)
         }
         if (isFinished(timerState)) {
@@ -46,12 +54,12 @@ export default function Timer() {
         return () => {
             clearInterval(tick)
         }
-    }, [timerState, elapsedTime, dispatch, timerLengthMs])
+    }, [timerState, dispatch, segments, activeSegmentIndex])
 
-    const onChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const newTimerLength: number = parseInt(e.target.value)
-        dispatch(changeTimer({ timerLength: newTimerLength }))
-    }
+    /*     const onChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+            const newTimerLength: number = parseInt(e.target.value)
+            dispatch(changeTimer({ timerLength: newTimerLength }))
+        } */
 
     const handleStart = () => {
         dispatch(startTimer())
@@ -65,18 +73,20 @@ export default function Timer() {
         dispatch(stopTimer())
     }
 
+    const isActive = (segmentIndex: number) => activeSegmentIndex === segmentIndex
+
     return (
         <section>
             <h2>Timer Test</h2>
-            <input
+            {/*             <input
                 type="number"
                 name="timerLength"
                 value={timerLength}
                 onChange={onChange}
-            />
-            <div style={{ margin: "50px", fontSize: "50px" }}>
-                {timerLength ? `${((timerLengthMs - elapsedTime) / 1000).toFixed(3)}s` : '--'}
-            </div>
+            /> */}
+            {segments.map((segment, i) =>
+                <Segment key={i} segment={segment} active={isActive(i)} />
+            )}
             {(isPaused(timerState) || isStopped(timerState)) && (
                 <button
                     onClick={handleStart}
