@@ -7,8 +7,11 @@ import {
     finishTimer,
     changeTimer,
     interval,
-    timerStates,
     step,
+    isFinished,
+    isPaused,
+    isPlaying,
+    isStopped,
 } from 'slices/timer'
 import { useDispatch, useSelector } from 'react-redux'
 import { RootState } from 'slices'
@@ -21,18 +24,25 @@ export default function Timer() {
         timerLengthMs,
         timerState,
         elapsedTime,
-    } = useSelector(
-        (state: RootState) => state.timer
-    )
+    } = useSelector((state: RootState) => state.timer)
+
 
     useEffect(() => {
-        const tick = setInterval(() => {
-            if (timerState === timerStates.PLAYING && elapsedTime < timerLengthMs) {
-                dispatch(interval())
-            } else if (elapsedTime >= timerLengthMs) {
-                dispatch(finishTimer())
-            }
-        }, step)
+        let tick: number | undefined = undefined
+        if (isPlaying(timerState)) {
+            tick = window.setInterval(() => {
+                if (isPlaying(timerState) && elapsedTime < timerLengthMs) {
+                    dispatch(interval())
+                } else if (elapsedTime >= timerLengthMs) {
+                    dispatch(finishTimer())
+                }
+
+                console.log(timerLengthMs, elapsedTime);
+            }, step)
+        }
+        if (isFinished(timerState)) {
+            clearInterval(tick)
+        }
         return () => {
             clearInterval(tick)
         }
@@ -67,14 +77,14 @@ export default function Timer() {
             <div style={{ margin: "50px", fontSize: "50px" }}>
                 {timerLength ? `${((timerLengthMs - elapsedTime) / 1000).toFixed(3)}s` : '--'}
             </div>
-            {(timerState === timerStates.PAUSED || timerState === timerStates.STOPPED) && (
+            {(isPaused(timerState) || isStopped(timerState)) && (
                 <button
                     onClick={handleStart}
                 >
                     Start
                 </button>
             )}
-            {(timerState === timerStates.PLAYING) && (
+            {(isPlaying(timerState)) && (
                 <button
                     onClick={handlePause}
                 >
@@ -83,7 +93,7 @@ export default function Timer() {
 
             )
             }
-            {(timerState !== timerStates.STOPPED) && <button
+            {(!isStopped(timerState)) && <button
                 onClick={handleStop}
             >
                 Reset

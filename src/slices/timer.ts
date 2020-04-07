@@ -10,11 +10,19 @@ export enum timerStates {
     PAUSED = 3,
 }
 
+export const isFinished = (timerState: timerStates) => timerState === timerStates.FINISHED
+export const isStopped = (timerState: timerStates) => timerState === timerStates.STOPPED
+export const isPlaying = (timerState: timerStates) => timerState === timerStates.PLAYING
+export const isPaused = (timerState: timerStates) => timerState === timerStates.PAUSED
+
+
 let initialState = {
     timerLength: 10,
     timerLengthMs: 10*oneSecond,
     timerState: timerStates.STOPPED,
-    elapsedTime: 0
+    elapsedTime: 0,
+    start: 0,
+    elapsedTimeAtStart: 0,
 }
 
 const timerSlice = createSlice({
@@ -23,6 +31,8 @@ const timerSlice = createSlice({
     reducers: {
         startTimer(state) {
             state.timerState = timerStates.PLAYING
+            state.start = new Date().getTime()
+            state.elapsedTimeAtStart = state.elapsedTime
         },
         pauseTimer(state) {
             state.timerState = timerStates.PAUSED
@@ -30,6 +40,8 @@ const timerSlice = createSlice({
         stopTimer(state) {
             state.timerState = timerStates.STOPPED
             state.elapsedTime = 0
+            state.elapsedTimeAtStart = 0
+            state.start = 0
         },
         finishTimer(state) {
             state.timerState = timerStates.FINISHED
@@ -42,7 +54,12 @@ const timerSlice = createSlice({
             state.elapsedTime = 0
         },
         interval(state) {
-            state.elapsedTime = state.elapsedTime + step
+            const currentTime = new Date().getTime()
+            const diff = currentTime - state.start
+            state.elapsedTime = state.elapsedTimeAtStart + diff
+            if ( state.elapsedTime > state.timerLengthMs ) {
+                state.elapsedTime = state.timerLengthMs
+            }
         },
     }
 })
